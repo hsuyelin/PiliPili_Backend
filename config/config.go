@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Encipher        string // Key used for encryption and obfuscation
 	StorageBasePath string // Prefix for storage paths, used to form full file paths
-	Port            string // Server port
+	Port            int    // Server port
 	LogLevel        string // Log level (e.g., INFO, DEBUG, ERROR)
 }
 
@@ -28,14 +28,14 @@ func Initialize(configFile string, loglevel string) error {
 		globalConfig = Config{
 			Encipher:        "",
 			StorageBasePath: "",
-			Port:            "60002",
+			Port:            60002,
 			LogLevel:        defaultLogLevel(loglevel),
 		}
 	} else {
 		globalConfig = Config{
 			Encipher:        viper.GetString("Encipher"),
 			StorageBasePath: viper.GetString("StorageBasePath"),
-			Port:            viper.GetString("Server.port"),
+			Port:            viper.GetInt("Server.port"),
 			LogLevel:        getLogLevel(loglevel),
 		}
 	}

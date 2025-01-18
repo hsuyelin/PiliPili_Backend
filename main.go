@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"os"
+	"strconv"
 )
 
 // initializeConfig initializes the configuration from the config file.
@@ -56,10 +57,10 @@ func startServer(r *gin.Engine) error {
 	logger.Info("Starting the server...")
 
 	port := config.GetConfig().Port
-	if port == "" {
-		port = "60002"
+	if port == 0 {
+		port = 60002
 	}
-	err := r.Run("0.0.0.0:" + port)
+	err := r.Run("0.0.0.0:" + strconv.Itoa(port))
 	if err != nil {
 		logger.Error("Error starting server: %v", err)
 		return err
