@@ -46,6 +46,7 @@ func authenticate(c *gin.Context, signature string) (mediaId string, expireAt ti
 		return "", time.Time{}, initErr
 	}
 
+	logger.Debug("Start decrypt signature: %s", signature)
 	data, decryptErr := sigInstance.Decrypt(signature)
 	if decryptErr != nil {
 		logger.Error("Failed to decrypt signature", "error", decryptErr)
