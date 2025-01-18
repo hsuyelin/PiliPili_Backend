@@ -1,0 +1,15 @@
+# Configuration for PiliPili Backend
+
+# LogLevel defines the level of logging (e.g., INFO, DEBUG, ERROR)
+LogLevel: "INFO"
+
+# EncryptionKey is used for encryption and obfuscation of data.
+Encipher: "vPQC5LWCN2CW2opz"
+
+# StorageBasePath is the base directory where files are stored. This is a prefix for the storage paths.
+StorageBasePath: "/mnt/anime/"
+
+# Server configuration
+Server:
+  port: "60002"  # Port on which the server will listen
+
