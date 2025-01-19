@@ -12,4 +12,3 @@ StorageBasePath: "/mnt/anime/"
 # Server configuration
 Server:
   port: "60002"  # Port on which the server will listen
-
