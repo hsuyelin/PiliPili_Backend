@@ -10,7 +10,7 @@
 
 ## 简介
 
-1. 本项目是实现Emby媒体服务播前后端分离的后端程序, 需要与播放分离前端 [PiliPili播放前端](https://github.com/hsuyelin/PiliPili_Fronted) 一起配套使用。
+1. 本项目是实现Emby媒体服务播前后端分离的后端程序, 需要与播放分离前端 [PiliPili播放前端](https://github.com/hsuyelin/PiliPili_Frontend) 一起配套使用。
 2. 本程序大部分参考了 [YASS-Backend](https://github.com/FacMata/YASS-Backend)，并在其基础上进行了优化，使其更加易用。
 
 ------
@@ -25,7 +25,7 @@
 * 通过配置文件中的`StorageBasePath`和播放链接解析出的`path`合并成一个本地路径
 * 开始获取本地文件信息，如果未正确解析出返回`500`错误，如果正确解析出继续下一步
 * 从客户端的请求头中获取`Content-Range`信息
-    * 如果包含则代表是恢复播放，从需要播放的地方卡开始分片传输
+    * 如果包含则代表是恢复播放，从需要播放的地方开始分片传输
     * 如果未包含则代表是从头播放，从文件开始的地方分片传输
 
 ![sequenceDiagram](https://github.com/hsuyelin/PiliPili_Backend/blob/main/img/sequenceDiagram_CN.png)

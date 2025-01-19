@@ -12,7 +12,7 @@
 
 ### Introduction
 
-1. This project is the backend application for separating Emby media service playback into frontend and backend components. It is designed to work with the playback frontend [PiliPili Playback Frontend](https://github.com/hsuyelin/PiliPili_Fronted).
+1. This project is the backend application for separating Emby media service playback into frontend and backend components. It is designed to work with the playback frontend [PiliPili Playback Frontend](https://github.com/hsuyelin/PiliPili_Frontend).
 2. This program is largely based on [YASS-Backend](https://github.com/FacMata/YASS-Backend), with optimizations made for improved usability.
 
 ------
@@ -86,7 +86,7 @@ Server:
     - Example:
         - Frontend `EmbyPath`: `/mnt/anime/OnePiece/Season 22/file.mkv`.
         - If `/mnt` should be hidden, set `StorageBasePath: "/mnt"`.
-        - Ensure the same path is configured in the [frontend](https://github.com/hsuyelin/PiliPili_Fronted).
+        - Ensure the same path is configured in the [frontend](https://github.com/hsuyelin/PiliPili_Frontend).
 4. **`Server` Configuration**:
     - `port`: Listening port, default is `60002`.
 
