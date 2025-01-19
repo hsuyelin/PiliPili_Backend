@@ -10,7 +10,8 @@
 
 ## 简介
 
-本项目是实现Emby媒体服务播前后端分离的后端程序, 需要与播放分离前端 [PiliPili播放前端](https://github.com/hsuyelin/PiliPili_Fronted) 一起配套使用。
+1. 本项目是实现Emby媒体服务播前后端分离的后端程序, 需要与播放分离前端 [PiliPili播放前端](https://github.com/hsuyelin/PiliPili_Fronted) 一起配套使用。
+2. 本程序大部分参考了 [YASS-Backend](https://github.com/FacMata/YASS-Backend)，并在其基础上进行了优化，使其更加易用。
 
 ------
 

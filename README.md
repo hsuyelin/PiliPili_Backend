@@ -12,7 +12,8 @@
 
 ### Introduction
 
-This project is the backend application for separating Emby media service playback into frontend and backend components. It is designed to work with the playback frontend [PiliPili Playback Frontend](https://github.com/hsuyelin/PiliPili_Fronted).
+1. This project is the backend application for separating Emby media service playback into frontend and backend components. It is designed to work with the playback frontend [PiliPili Playback Frontend](https://github.com/hsuyelin/PiliPili_Fronted).
+2. This program is largely based on [YASS-Backend](https://github.com/FacMata/YASS-Backend), with optimizations made for improved usability.
 
 ------
 
