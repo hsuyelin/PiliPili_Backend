@@ -8,7 +8,7 @@
 
 
 
-[中文版本](https://github.com/hsuyelin/PiliPili_Backend/blob/main/READEME_CN.md)
+[中文版本](https://github.com/hsuyelin/PiliPili_Backend/blob/main/README_CN.md)
 
 ### Introduction
 
