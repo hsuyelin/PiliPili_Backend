@@ -16,7 +16,7 @@ func Remote(c *gin.Context) {
 	signature := c.Query("signature")
 	path := c.Query("path")
 
-	mediaId, expireAt, err := authenticate(c, signature)
+	itemId, mediaId, expireAt, err := authenticate(c, signature)
 	if err != nil {
 		logger.Error("Authentication failed", "error", err)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -28,6 +28,7 @@ func Remote(c *gin.Context) {
 	logger.Info(
 		"Authentication successful",
 		"path", path,
+		"itemId", itemId,
 		"mediaId", mediaId,
 		"expireAt", expireAtFormatted,
 	)
@@ -38,12 +39,12 @@ func Remote(c *gin.Context) {
 }
 
 // authenticate verifies the provided signature by decrypting and validating its contents.
-func authenticate(c *gin.Context, signature string) (mediaId string, expireAt time.Time, err error) {
+func authenticate(c *gin.Context, signature string) (itemId, mediaId string, expireAt time.Time, err error) {
 	sigInstance, initErr := GetSignatureInstance()
 	if initErr != nil {
 		logger.Error("Signature instance is not initialized", "error", initErr)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return "", time.Time{}, initErr
+		return "", "", time.Time{}, initErr
 	}
 
 	logger.Debug("Start decrypt signature: %s", signature)
@@ -51,29 +52,36 @@ func authenticate(c *gin.Context, signature string) (mediaId string, expireAt ti
 	if decryptErr != nil {
 		logger.Error("Failed to decrypt signature", "error", decryptErr)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid signature"})
-		return "", time.Time{}, decryptErr
+		return "", "", time.Time{}, decryptErr
 	}
 
+	itemIdValue, itemIdExists := data["itemId"].(string)
 	mediaIdValue, mediaIdExists := data["mediaId"].(string)
 	expireAtValue, expireAtExists := data["expireAt"].(float64)
-	if !mediaIdExists || !expireAtExists {
+	if !mediaIdExists || !expireAtExists || !itemIdExists {
 		logger.Error("Invalid decrypted data: missing required fields", "data", data)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid signature structure"})
-		return "", time.Time{}, errors.New("invalid signature structure")
+		return "", "", time.Time{}, errors.New("invalid signature structure")
+	}
+
+	if itemIdValue == "" {
+		logger.Error("Authentication failed: itemId is empty")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "itemId is empty"})
+		return "", "", time.Time{}, errors.New("itemId is empty")
 	}
 
 	if mediaIdValue == "" {
 		logger.Error("Authentication failed: mediaId is empty")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "mediaId is empty"})
-		return "", time.Time{}, errors.New("mediaId is empty")
+		return "", "", time.Time{}, errors.New("mediaId is empty")
 	}
 
 	expireAt = time.Unix(int64(expireAtValue), 0)
 	if expireAt.Before(time.Now().UTC()) {
 		logger.Error("Authentication failed: signature expired", "expireAt", expireAt)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Signature has expired"})
-		return "", time.Time{}, errors.New("signature has expired")
+		return "", "", time.Time{}, errors.New("signature has expired")
 	}
 
-	return mediaIdValue, expireAt, nil
+	return itemIdValue, mediaIdValue, expireAt, nil
 }

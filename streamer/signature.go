@@ -43,11 +43,12 @@ func GetSignatureInstance() (*Signature, error) {
 	return signatureInstance, nil
 }
 
-// Encrypt deterministically generates a signature for the given mediaId and expireAt using HMAC-SHA256.
+// Encrypt deterministically generates a signature for the given itemId, mediaId and expireAt using HMAC-SHA256.
 // Returns a base64-encoded ciphertext string.
-func (s *Signature) Encrypt(mediaId string, expireAt int64) (string, error) {
+func (s *Signature) Encrypt(itemId, mediaId string, expireAt int64) (string, error) {
 	// Create a map with the input data
 	data := map[string]interface{}{
+		"itemId":   itemId,
 		"mediaId":  mediaId,
 		"expireAt": expireAt,
 	}
