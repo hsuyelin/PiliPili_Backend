@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  pilipili_backend:
+    image: hsuyelin/pilipili_backend:latest
+    container_name: ${CONTAINER_NAME:-pilipili_backend}
+    environment:
+      - UID=0
+      - GID=0
+      - GIDLIST=0
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./config/config.yaml:/app/config.yaml:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
