@@ -92,57 +92,95 @@ Server:
 
 ------
 
-### Usage
+## How to Use
 
-#### Step 1: Install Go Environment
+### 1. Install Using Docker (Recommended)
 
-##### 1.1 Remove Existing Go Installation
+#### 1.1 Create a Docker Directory
+
+```shell
+mkdir -p /data/docker/pilipili_backend
+```
+
+#### 1.2 Create Configuration Folder and File
+
+```shell
+cd /data/docker/pilipili_backend
+mkdir -p config && cd config
+```
+
+Copy [config.yaml](https://github.com/hsuyelin/PiliPili_Frontend/blob/main/config.yaml) to the `config` folder and edit it as needed.
+
+#### 1.3 Create docker-compose.yaml
+
+Navigate back to the `/data/docker/pilipili_backend` directory, and copy [docker-compose.yml](https://github.com/hsuyelin/PiliPili_Frontend/blob/main/docker/docker-compose.yml) to this directory.
+
+#### 1.4 Start the Container
+
+```shell
+docker-compose pull && docker-compose up -d
+```
+
+### 2. Manual Installation
+
+#### 2.1 Install the Go Environment
+
+##### 2.1.1 Remove Existing Go Installation
+
+Forcefully remove any existing Go installation to ensure version compatibility.
 
 ```shell
 rm -rf /usr/local/go
 ```
 
-##### 1.2 Download and Install the Latest Go Version
+##### 2.1.2 Download and Install the Latest Version of Go
 
 ```shell
 wget -q -O /tmp/go.tar.gz https://go.dev/dl/go1.23.5.linux-amd64.tar.gz && tar -C /usr/local -xzf /tmp/go.tar.gz && rm /tmp/go.tar.gz
 ```
 
-##### 1.3 Add Go to Environment Variables
+##### 2.1.3 Add Go to the Environment Variables
 
 ```shell
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc && source ~/.bashrc
 ```
 
-##### 1.4 Verify Installation
+##### 2.1.4 Verify Installation
 
 ```shell
-go version
-# Expected output: go version go1.23.5 linux/amd64
+go version # If the output is "go version go1.23.5 linux/amd64," the installation was successful.
 ```
 
-------
+#### 2.2 Clone the Backend Program to Local Machine
 
-#### Step 2: Clone the Backend Repository
-
-Clone the repository into a directory, e.g., `/data/emby_backend`.
+For example, to clone it to the `/data/emby_fronted` directory:
 
 ```shell
 git clone https://github.com/hsuyelin/PiliPili_Backend.git /data/emby_backend
 ```
 
-------
+#### 2.3 Enter the Backend Program Directory and Edit the Configuration File
 
-#### Step 3: Configure the Application
+```yaml
+# Configuration for PiliPili Backend
 
-Edit the `config.yaml` file in the repository to match your setup.
+# LogLevel defines the level of logging (e.g., INFO, DEBUG, ERROR)
+LogLevel: "INFO"
 
-------
+# EncryptionKey is used for encryption and obfuscation of data.
+Encipher: "vPQC5LWCN2CW2opz"
 
-#### Step 4: Run the Application
+# StorageBasePath is the base directory where files are stored. This is a prefix for the storage paths.
+StorageBasePath: "/mnt/anime/"
 
-Run the program in the background:
+# Server configuration
+Server:
+  port: "60002"  # Port on which the server will listen
+```
+
+#### 2.4 Run the Program
 
 ```shell
 nohup go run main.go config.yaml > streamer.log 2>&1 &
 ```
+
