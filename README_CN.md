@@ -94,11 +94,11 @@ cd /data/docker/pilipili_backend
 mkdir -p config && cd config
 ```
 
-将 [config.yaml](https://github.com/hsuyelin/PiliPili_Frontend/blob/main/config.yaml) 复制到`config`文件夹中，并进行编辑
+将 [config.yaml](https://github.com/hsuyelin/PiliPili_Backend/blob/main/config.yaml) 复制到`config`文件夹中，并进行编辑
 
 #### 1.3 创建docker-compose.yaml
 
-返回到 `/data/docker/pilipili_backend`目录，将 [docker-compose.yml](https://github.com/hsuyelin/PiliPili_Frontend/blob/main/docker/docker-compose.yml) 复制到该目录下
+返回到 `/data/docker/pilipili_backend`目录，将 [docker-compose.yml](https://github.com/hsuyelin/PiliPili_Backend/blob/main/docker/docker-compose.yml) 复制到该目录下
 
 #### 1.4 启动容器
 
@@ -138,7 +138,7 @@ go version #显示 go version go1.23.5 linux/amd64 就是安装成功
 
 #### 2.2 克隆后端程序组到本地
 
-假如你需要克隆到`/data/emby_fronted`这个目录
+假如你需要克隆到`/data/emby_backend`这个目录
 
 ```shell
 git clone https://github.com/hsuyelin/PiliPili_Backend.git /data/emby_backend

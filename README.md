@@ -10,14 +10,14 @@
 
 [中文版本](https://github.com/hsuyelin/PiliPili_Backend/blob/main/README_CN.md)
 
-### Introduction
+## Introduction
 
 1. This project is the backend application for separating Emby media service playback into frontend and backend components. It is designed to work with the playback frontend [PiliPili Playback Frontend](https://github.com/hsuyelin/PiliPili_Frontend).
 2. This program is largely based on [YASS-Backend](https://github.com/FacMata/YASS-Backend), with optimizations made for improved usability.
 
 ------
 
-### Principle
+## Principle
 
 1. Use a specific `nginx`configuration (refer to [nginx.conf](https://github.com/hsuyelin/PiliPili_Backend/blob/main/nginx/nginx.conf) to listen on a designated port for redirected playback links from the frontend.
 
@@ -46,7 +46,7 @@
 
 ------
 
-### Features
+## Features
 
 - Compatible with all Emby server versions.
 - Supports high-concurrency requests.
@@ -54,7 +54,7 @@
 
 ------
 
-### Configuration File
+## Configuration File
 
 ```yaml
 # Configuration for PiliPili Backend
@@ -73,22 +73,20 @@ Server:
   port: "60002"  # Port on which the server will listen
 ```
 
-#### Key Settings:
-
-1. **`LogLevel`**: Logging verbosity levels:
-    - `WARN`: Minimal logging unless debugging is insufficient.
-    - `DEBUG`: Logs `DEBUG`, `INFO`, and `ERROR`. Recommended for debugging.
-    - `INFO`: Logs `INFO` and `ERROR`. Suitable for regular operations.
-    - `ERROR`: For stable, unattended setups, minimizes log entries.
-2. **`Encipher`**: A 16-character encryption key for signature obfuscation. **Must match between frontend and backend.**
-3. **`StorageBasePath`**:
-    - Ensures consistency between the frontend's Emby storage path mapping and the backend's actual file paths.
-    - Example:
-        - Frontend `EmbyPath`: `/mnt/anime/OnePiece/Season 22/file.mkv`.
-        - If `/mnt` should be hidden, set `StorageBasePath: "/mnt"`.
-        - Ensure the same path is configured in the [frontend](https://github.com/hsuyelin/PiliPili_Frontend).
-4. **`Server` Configuration**:
-    - `port`: Listening port, default is `60002`.
+**`LogLevel`**: Logging verbosity levels:
+- `WARN`: Minimal logging unless debugging is insufficient.
+- `DEBUG`: Logs `DEBUG`, `INFO`, and `ERROR`. Recommended for debugging.
+- `INFO`: Logs `INFO` and `ERROR`. Suitable for regular operations.
+- `ERROR`: For stable, unattended setups, minimizes log entries.
+**`Encipher`**: A 16-character encryption key for signature obfuscation. **Must match between frontend and backend.**
+**`StorageBasePath`**:
+- Ensures consistency between the frontend's Emby storage path mapping and the backend's actual file paths.
+  - Example:
+      - Frontend `EmbyPath`: `/mnt/anime/OnePiece/Season 22/file.mkv`.
+      - If `/mnt` should be hidden, set `StorageBasePath: "/mnt"`.
+      - Ensure the same path is configured in the [frontend](https://github.com/hsuyelin/PiliPili_Frontend).
+**`Server` Configuration**:
+  - `port`: Listening port, default is `60002`.
 
 ------
 
@@ -109,11 +107,11 @@ cd /data/docker/pilipili_backend
 mkdir -p config && cd config
 ```
 
-Copy [config.yaml](https://github.com/hsuyelin/PiliPili_Frontend/blob/main/config.yaml) to the `config` folder and edit it as needed.
+Copy [config.yaml](https://github.com/hsuyelin/PiliPili_Backend/blob/main/config.yaml) to the `config` folder and edit it as needed.
 
 #### 1.3 Create docker-compose.yaml
 
-Navigate back to the `/data/docker/pilipili_backend` directory, and copy [docker-compose.yml](https://github.com/hsuyelin/PiliPili_Frontend/blob/main/docker/docker-compose.yml) to this directory.
+Navigate back to the `/data/docker/pilipili_backend` directory, and copy [docker-compose.yml](https://github.com/hsuyelin/PiliPili_Backend/blob/main/docker/docker-compose.yml) to this directory.
 
 #### 1.4 Start the Container
 
@@ -153,7 +151,7 @@ go version # If the output is "go version go1.23.5 linux/amd64," the installatio
 
 #### 2.2 Clone the Backend Program to Local Machine
 
-For example, to clone it to the `/data/emby_fronted` directory:
+For example, to clone it to the `/data/emby_backend` directory:
 
 ```shell
 git clone https://github.com/hsuyelin/PiliPili_Backend.git /data/emby_backend
