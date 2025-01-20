@@ -11,6 +11,7 @@ services:
       - TZ=Asia/Shanghai
     volumes:
       - ./config/config.yaml:/app/config.yaml:ro
+      - /mnt/anime:/mnt/anime:ro # Map storage to the container based on actual requirements. / 按照实际情况映射存储到容器
     restart: unless-stopped
     privileged: true
     network_mode: host
