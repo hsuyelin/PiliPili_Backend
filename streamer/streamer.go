@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Global buffer pool to hold 4MB buffers
@@ -19,7 +20,15 @@ var bufferPool = sync.Pool{
 	},
 }
 
+func init() {
+	// Pre-warm the buffer pool with 50 buffers
+	for i := 0; i < 50; i++ {
+		bufferPool.Put(make([]byte, 4*1024*1024))
+	}
+}
+
 func Stream(c *gin.Context, filePath string) {
+	startTime := time.Now()
 	logger.Info("Starting file streaming", "filePath", filePath)
 
 	file, err := getFile(c, filePath)
@@ -27,7 +36,6 @@ func Stream(c *gin.Context, filePath string) {
 		logger.Error("Failed to open file", "filePath", filePath, "error", err)
 		return
 	}
-
 	defer func() {
 		if err := file.Close(); err != nil {
 			logger.Error("Error closing file", "filePath", filePath, "error", err)
@@ -41,7 +49,7 @@ func Stream(c *gin.Context, filePath string) {
 	}
 
 	fileSize := fileInfo.Size()
-	logger.Debug("File size retrieved", "filePath", filePath, "fileSize", fileSize)
+	logger.Debug("File size retrieved", "filePath", filePath, "fileSize", fileSize, "elapsed", time.Since(startTime))
 
 	start, end := parseRangeHeader(c, fileSize)
 
@@ -55,80 +63,76 @@ func Stream(c *gin.Context, filePath string) {
 }
 
 func getFile(c *gin.Context, filePath string) (*os.File, error) {
+	startTime := time.Now()
 	file, err := os.Open(filePath)
 	if err != nil {
 		c.AbortWithStatus(http.StatusNotFound)
 		return nil, err
 	}
-	logger.Debug("File opened successfully", "filePath", filePath)
+	logger.Debug("File opened successfully", "filePath", filePath, "elapsed", time.Since(startTime))
 	return file, nil
 }
 
 func getFileInfo(c *gin.Context, file *os.File) (os.FileInfo, error) {
+	startTime := time.Now()
 	fileInfo, err := file.Stat()
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return nil, err
 	}
-	logger.Debug("File info retrieved", "fileName", fileInfo.Name(), "fileSize", fileInfo.Size())
+	logger.Debug("File info retrieved", "fileName", fileInfo.Name(), "fileSize", fileInfo.Size(), "elapsed", time.Since(startTime))
 	return fileInfo, nil
 }
 
 func parseRangeHeader(c *gin.Context, fileSize int64) (int64, int64) {
+	startTime := time.Now()
 	rangeHeader := c.GetHeader("Range")
 	if rangeHeader == "" {
-		logger.Debug("No Range header provided, returning full file")
+		logger.Debug("No Range header provided, returning full file", "elapsed", time.Since(startTime))
 		return 0, fileSize - 1
 	}
 
 	logger.Debug("Original Range header received", "rangeHeader", rangeHeader)
-	ranges := strings.Split(rangeHeader, "=")
+	ranges := strings.SplitN(rangeHeader, "=", 2)
 	if len(ranges) != 2 || ranges[0] != "bytes" {
-		logger.Warn("Invalid range header format, falling back to full file", "rangeHeader", rangeHeader)
+		logger.Warn("Invalid range header format, falling back to full file", "rangeHeader", rangeHeader, "elapsed", time.Since(startTime))
 		return 0, fileSize - 1
 	}
 
-	rangeParts := strings.Split(ranges[1], "-")
+	rangeParts := strings.SplitN(ranges[1], "-", 2)
 	start, err := strconv.ParseInt(rangeParts[0], 10, 64)
 	if err != nil || start < 0 || start >= fileSize {
-		logger.Warn("Invalid start range, falling back to full file", "start", start, "fileSize", fileSize)
+		logger.Warn("Invalid start range, falling back to full file", "start", rangeParts[0], "fileSize", fileSize, "elapsed", time.Since(startTime))
 		return 0, fileSize - 1
 	}
 
 	var end int64
-	if rangeParts[1] != "" {
+	if rangeParts[1] == "" {
+		end = fileSize - 1
+	} else {
 		end, err = strconv.ParseInt(rangeParts[1], 10, 64)
 		if err != nil || end >= fileSize || end < start {
-			logger.Warn("Invalid end range, falling back to full file", "end", end, "fileSize", fileSize)
-			return 0, fileSize - 1
+			logger.Warn("Invalid end range, adjusting to file end", "end", rangeParts[1], "fileSize", fileSize, "elapsed", time.Since(startTime))
+			end = fileSize - 1
 		}
-	} else {
-		end = fileSize - 1
 	}
 
-	logger.Debug("Range header parsed", "start", start, "end", end)
+	logger.Debug("Range header parsed", "start", start, "end", end, "elapsed", time.Since(startTime))
 	return start, end
 }
 
-func streamFullFile(
-	c *gin.Context,
-	file *os.File,
-	fileInfo os.FileInfo,
-	start, end int64,
-) {
+func streamFullFile(c *gin.Context, file *os.File, fileInfo os.FileInfo, start, end int64) {
 	fileSize := fileInfo.Size()
 	contentType := getFileContentType(fileInfo)
 
 	c.Writer.Header().Set("Content-Type", contentType)
 	c.Writer.Header().Set("Content-Length", strconv.FormatInt(fileSize, 10))
-	c.Writer.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize))
 	c.Writer.Header().Set("Accept-Ranges", "bytes")
 
 	rangeHeader := c.GetHeader("Range")
 	if rangeHeader != "" {
 		c.Status(http.StatusPartialContent)
-		contentRange := fmt.Sprintf("bytes 0-%d/%d", fileSize-1, fileSize)
-		c.Writer.Header().Set("Content-Range", contentRange)
+		c.Writer.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize))
 	} else {
 		c.Status(http.StatusOK)
 	}
@@ -140,15 +144,10 @@ func streamFullFile(
 		"responseHeaders", c.Writer.Header(),
 		"fileSize", fileSize,
 	)
-	streamFile(file, c, 0, fileSize-1)
+	streamFile(file, c, start, end)
 }
 
-func streamPartialFile(
-	c *gin.Context,
-	file *os.File,
-	fileInfo os.FileInfo,
-	start, end int64,
-) {
+func streamPartialFile(c *gin.Context, file *os.File, fileInfo os.FileInfo, start, end int64) {
 	fileSize := fileInfo.Size()
 	contentType := getFileContentType(fileInfo)
 	contentLength := end - start + 1
@@ -173,105 +172,131 @@ func streamPartialFile(
 }
 
 func streamFile(file *os.File, c *gin.Context, start, end int64) {
-	buffer := bufferPool.Get().([]byte)
-	defer bufferPool.Put(buffer)
-
-	_, err := file.Seek(start, 0)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		logger.Error("Error seeking file", "start", start, "error", err)
-		return
+	startTime := time.Now()
+	// Use smaller buffer for initial chunk to speed up first response
+	bufferSize := 256 * 1024 // 256KB for initial chunk
+	if start != 0 {
+		bufferSize = 4 * 1024 * 1024 // 4MB for subsequent chunks
 	}
 
+	// Fetch or adjust buffer from pool
+	bufferGetTime := time.Now()
+	buffer := bufferPool.Get().([]byte)
+	if len(buffer) != bufferSize {
+		buffer = make([]byte, bufferSize) // Dynamically adjust if needed
+	}
+	logger.Debug("Buffer acquired", "size", bufferSize, "elapsed", time.Since(bufferGetTime))
+	defer bufferPool.Put(buffer)
+
+	// Seek to the start position
+	seekStartTime := time.Now()
+	if _, err := file.Seek(start, io.SeekStart); err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		logger.Error("Error seeking file", "start", start, "error", err, "elapsed", time.Since(seekStartTime))
+		return
+	}
+	logger.Debug("Seek completed", "start", start, "elapsed", time.Since(seekStartTime))
+
 	totalBytes := end - start + 1
+	writtenBytes := int64(0)
+	chunkCount := 0
+
 	for totalBytes > 0 {
+		chunkStartTime := time.Now()
+		chunkCount++
 		readSize := int64(len(buffer))
 		if totalBytes < readSize {
 			readSize = totalBytes
 		}
 
+		// Read from file
+		readStartTime := time.Now()
 		n, err := file.Read(buffer[:readSize])
 		if err != nil {
 			if err == io.EOF {
+				logger.Debug("Read EOF", "chunk", chunkCount, "elapsed", time.Since(readStartTime))
 				break
 			}
 			c.AbortWithStatus(http.StatusInternalServerError)
-			logger.Error("Error reading file", "error", err)
+			logger.Error("Error reading file", "error", err, "chunk", chunkCount, "elapsed", time.Since(readStartTime))
 			return
 		}
-
 		if n == 0 {
+			logger.Debug("Read zero bytes", "chunk", chunkCount, "elapsed", time.Since(readStartTime))
 			break
 		}
+		logger.Debug("Read completed", "chunk", chunkCount, "bytes", n, "elapsed", time.Since(readStartTime))
 
+		// Write to client
+		writeStartTime := time.Now()
 		_, writeErr := c.Writer.Write(buffer[:n])
 		if writeErr != nil {
-			logger.Error("Client connection lost", "error", writeErr)
+			logger.Error("Client connection lost", "error", writeErr, "chunk", chunkCount, "elapsed", time.Since(writeStartTime))
 			return
 		}
+		logger.Debug("Write completed", "chunk", chunkCount, "bytes", n, "elapsed", time.Since(writeStartTime))
 
-		c.Writer.Flush()
+		writtenBytes += int64(n)
 		totalBytes -= int64(n)
+
+		// Flush strategically
+		flushStartTime := time.Now()
+		if writtenBytes%int64(1024*1024) == 0 || totalBytes == 0 {
+			c.Writer.Flush()
+			logger.Debug("Flush executed", "chunk", chunkCount, "writtenBytes", writtenBytes, "elapsed", time.Since(flushStartTime))
+		}
+
+		logger.Debug("Chunk processed", "chunk", chunkCount, "bytes", n, "remaining", totalBytes, "elapsed", time.Since(chunkStartTime))
 	}
 
-	logger.Info("File streaming completed")
+	// Final flush
+	finalFlushStartTime := time.Now()
+	c.Writer.Flush()
+	logger.Debug("Final flush executed", "elapsed", time.Since(finalFlushStartTime))
+
+	logger.Info("File streaming completed", "start", start, "end", end, "totalBytes", end-start+1, "totalElapsed", time.Since(startTime))
 }
 
 func getFileContentType(fileInfo os.FileInfo) string {
 	name := strings.ToLower(fileInfo.Name())
-	if strings.HasSuffix(name, ".mp4") {
+	switch {
+	case strings.HasSuffix(name, ".mp4"):
 		return "video/mp4"
-	}
-	if strings.HasSuffix(name, ".mkv") {
+	case strings.HasSuffix(name, ".mkv"):
 		return "video/x-matroska"
-	}
-	if strings.HasSuffix(name, ".avi") {
+	case strings.HasSuffix(name, ".avi"):
 		return "video/x-msvideo"
-	}
-	if strings.HasSuffix(name, ".mov") {
+	case strings.HasSuffix(name, ".mov"):
 		return "video/quicktime"
-	}
-	if strings.HasSuffix(name, ".flv") {
+	case strings.HasSuffix(name, ".flv"):
 		return "video/x-flv"
-	}
-	if strings.HasSuffix(name, ".rmvb") {
+	case strings.HasSuffix(name, ".rmvb"):
 		return "application/vnd.rn-realmedia-vbr"
-	}
-	if strings.HasSuffix(name, ".rm") {
+	case strings.HasSuffix(name, ".rm"):
 		return "application/vnd.rn-realmedia"
-	}
-	if strings.HasSuffix(name, ".mka") {
+	case strings.HasSuffix(name, ".mka"):
 		return "audio/x-matroska"
-	}
-	if strings.HasSuffix(name, ".aac") {
+	case strings.HasSuffix(name, ".aac"):
 		return "audio/aac"
-	}
-	if strings.HasSuffix(name, ".mp3") {
+	case strings.HasSuffix(name, ".mp3"):
 		return "audio/mpeg"
-	}
-	if strings.HasSuffix(name, ".wav") {
+	case strings.HasSuffix(name, ".wav"):
 		return "audio/wav"
-	}
-	if strings.HasSuffix(name, ".ogg") {
+	case strings.HasSuffix(name, ".ogg"):
 		return "audio/ogg"
-	}
-	if strings.HasSuffix(name, ".srt") {
+	case strings.HasSuffix(name, ".srt"):
 		return "application/x-subrip"
-	}
-	if strings.HasSuffix(name, ".vtt") {
+	case strings.HasSuffix(name, ".vtt"):
 		return "text/vtt"
-	}
-	if strings.HasSuffix(name, ".ass") {
+	case strings.HasSuffix(name, ".ass"):
 		return "text/x-ssa"
-	}
-	if strings.HasSuffix(name, ".jpg") || strings.HasSuffix(name, ".jpeg") {
+	case strings.HasSuffix(name, ".jpg"), strings.HasSuffix(name, ".jpeg"):
 		return "image/jpeg"
-	}
-	if strings.HasSuffix(name, ".png") {
+	case strings.HasSuffix(name, ".png"):
 		return "image/png"
-	}
-	if strings.HasSuffix(name, ".gif") {
+	case strings.HasSuffix(name, ".gif"):
 		return "image/gif"
+	default:
+		return "application/octet-stream"
 	}
-	return "application/octet-stream"
 }
