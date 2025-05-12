@@ -21,8 +21,8 @@ var bufferPool = sync.Pool{
 }
 
 func init() {
-	// Pre-warm the buffer pool with 50 buffers
-	for i := 0; i < 50; i++ {
+	// Pre-warm the buffer pool with 200 buffers
+	for i := 0; i < 200; i++ {
 		bufferPool.Put(make([]byte, 4*1024*1024))
 	}
 }
@@ -174,7 +174,7 @@ func streamPartialFile(c *gin.Context, file *os.File, fileInfo os.FileInfo, star
 func streamFile(file *os.File, c *gin.Context, start, end int64) {
 	startTime := time.Now()
 	// Use smaller buffer for initial chunk to speed up first response
-	bufferSize := 256 * 1024 // 256KB for initial chunk
+	bufferSize := 1 * 1024 // 256KB for initial chunk
 	if start != 0 {
 		bufferSize = 4 * 1024 * 1024 // 4MB for subsequent chunks
 	}
